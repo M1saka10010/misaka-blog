@@ -1,0 +1,46 @@
+node_modules/
+build/
+dist/
+.react-router/
+.wrangler/
+.vite/
+
+# User-specific Cloudflare deployment configuration
+wrangler.jsonc
+!wrangler.example.jsonc
+
+# Local environment variables and secrets
+.dev.vars*
+!.dev.vars.example
+.env*
+!.env.example
+!.env.example.*
+.wrangler.env*
+!.wrangler.env.example
+
+# Generated types and test output
+worker-configuration.d.ts
+*.tsbuildinfo
+coverage/
+playwright-report/
+test-results/
+
+# Logs and local tool state
+*.log
+.cache/
+.mimocode/
+
+# Sonic migration exports and generated database imports
+sonic-data-export-*.json
+sonic*.db
+sonic*.sqlite
+sonic*.sqlite3
+sonic-import.sql
+sonic-import-report.json
+
+# Editor and operating-system files
+.DS_Store
+Thumbs.db
+.idea/
+*.swp
+*.swo

@@ -80,6 +80,7 @@ GITHUB_OAUTH_CLIENT_ID="本地 GitHub OAuth Client ID"
 GITHUB_OAUTH_CLIENT_SECRET="本地 GitHub OAuth Client Secret"
 GITHUB_ALLOWED_LOGIN="允许登录的 GitHub 用户名"
 GITHUB_ALLOWED_USER_ID="GitHub 数字用户 ID"
+TIMEZONE="Asia/Shanghai"
 SESSION_SECRET="至少 32 字节的随机值"
 ```
 
@@ -235,11 +236,13 @@ GITHUB_OAUTH_CLIENT_ID
 GITHUB_ALLOWED_LOGIN
 GITHUB_ALLOWED_USER_ID
 PUBLIC_SITE_URL
+TIMEZONE
 ```
 
 这些是博客运行时变量，与 `.wrangler.env` 中的 Wrangler 部署凭据不同。
 使用反向代理或自定义域名时，将 `PUBLIC_SITE_URL` 设置为公开站点 Origin，例如
 `https://blog.example.com`。留空时回退到 Worker 收到的请求地址，适用于本地开发和直接访问 Workers 域名。
+`TIMEZONE` 使用 IANA 时区名称控制文章日期和页脚年份的展示，例如 `Asia/Shanghai`；未配置或值无效时默认使用 `Asia/Shanghai`。
 
 敏感值使用 Wrangler Secret：
 

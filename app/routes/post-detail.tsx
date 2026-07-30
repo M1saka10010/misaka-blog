@@ -1,8 +1,8 @@
-import { Link, type LoaderFunctionArgs, type MetaFunction } from "react-router";
+import { Link, useOutletContext, type LoaderFunctionArgs, type MetaFunction } from "react-router";
 
 import { ElectricMark } from "~/components/public/electric-mark";
 import { formatPublishedDate } from "~/components/public/post-list";
-import { getSiteTitleFromMatches } from "~/lib/public-context";
+import { getSiteTitleFromMatches, type PublicLayoutData } from "~/lib/public-context";
 import { getDatabase } from "~/server/database.server";
 import { getPostBySlug } from "~/server/db/public";
 
@@ -20,13 +20,14 @@ export async function loader({ params }: LoaderFunctionArgs) {
 
 export default function PostDetail({ loaderData }: { loaderData: Awaited<ReturnType<typeof loader>> }) {
   const { post } = loaderData;
+  const { timeZone } = useOutletContext<PublicLayoutData>();
   return (
     <main className="mx-auto w-full max-w-5xl px-5 pb-20 pt-8 md:px-8 lg:pb-28 lg:pt-14">
       <article className="rounded-xl border border-line bg-surface px-5 py-8 shadow-soft md:px-10 md:py-12 lg:px-20 lg:py-16">
         <header className="mx-auto max-w-reading border-b border-line pb-8 text-left lg:pb-10">
           <div className="flex justify-start"><ElectricMark /></div>
           <div className="mt-5 flex flex-wrap items-center justify-start gap-x-3 gap-y-2 font-mono text-xs text-muted">
-            <time dateTime={post.publishedAt}>{formatPublishedDate(post.publishedAt)}</time>
+            <time dateTime={post.publishedAt}>{formatPublishedDate(post.publishedAt, timeZone)}</time>
             <span aria-hidden="true" className="h-1 w-1 rounded-full bg-mint" />
             <span>{post.readingMinutes} 分钟阅读</span>
           </div>

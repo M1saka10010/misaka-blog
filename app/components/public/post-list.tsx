@@ -1,16 +1,22 @@
-import { Link } from "react-router";
+import { Link, useOutletContext } from "react-router";
 
+import type { PublicLayoutData } from "~/lib/public-context";
 import type { PaginatedPosts } from "~/server/db/public";
 import { ArrowIcon } from "./icons";
 
-const dateFormatter = new Intl.DateTimeFormat("zh-CN", { year: "numeric", month: "2-digit", day: "2-digit" });
-
-export function formatPublishedDate(value: string): string {
+export function formatPublishedDate(value: string, timeZone: string): string {
   const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? value : dateFormatter.format(date).replaceAll("/", ".");
+  if (Number.isNaN(date.getTime())) return value;
+  return new Intl.DateTimeFormat("zh-CN", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    timeZone,
+  }).format(date).replaceAll("/", ".");
 }
 
 export function PostList({ data, emptyMessage = "还没有已发布的文章。" }: { data: PaginatedPosts; emptyMessage?: string }) {
+  const { timeZone } = useOutletContext<PublicLayoutData>();
   if (data.posts.length === 0) {
     return (
       <div className="rounded-xl border border-dashed border-line bg-surface px-6 py-16 text-center">
@@ -26,7 +32,7 @@ export function PostList({ data, emptyMessage = "还没有已发布的文章。"
         <li key={post.slug} className="group py-7 first:pt-6 lg:py-9">
           <article>
             <div className="flex flex-wrap items-center gap-x-3 gap-y-2 font-mono text-xs text-muted">
-              <time dateTime={post.publishedAt}>{formatPublishedDate(post.publishedAt)}</time>
+              <time dateTime={post.publishedAt}>{formatPublishedDate(post.publishedAt, timeZone)}</time>
               <span aria-hidden="true" className="h-1 w-1 rounded-full bg-mint" />
               <span>{post.readingMinutes} 分钟阅读</span>
             </div>

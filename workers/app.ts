@@ -1,5 +1,7 @@
 import { createRequestHandler, RouterContextProvider } from "react-router";
 
+import { resolvePublicRequest } from "../app/server/public-request.server";
+
 declare global {
   interface CloudflareEnvironment {
     DB: D1Database;
@@ -8,6 +10,7 @@ declare global {
     GITHUB_ALLOWED_LOGIN: string;
     GITHUB_ALLOWED_USER_ID?: string;
     PUBLIC_SITE_URL?: string;
+    TIMEZONE?: string;
     SESSION_SECRET: string;
   }
 }
@@ -22,6 +25,6 @@ export default {
     const context = Object.assign(new RouterContextProvider(), {
       cloudflare: { env, ctx },
     });
-    return requestHandler(request, context);
+    return requestHandler(resolvePublicRequest(request, env.PUBLIC_SITE_URL), context);
   },
 } satisfies ExportedHandler<CloudflareEnvironment>;

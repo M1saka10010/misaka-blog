@@ -1,6 +1,8 @@
 import { Link } from "react-router";
 import type { Route } from "./+types/admin-index";
 import { AdminPageHeader, AdminShell } from "~/components/admin-shell";
+import { formatDate } from "~/lib/date-time";
+import { normalizeTimeZone } from "~/lib/public-context";
 import { requireAdmin } from "~/server/auth.server";
 import { getSiteSettings } from "~/server/db/public";
 import { getEnvironment } from "~/server/env.server";
@@ -28,6 +30,7 @@ export async function loader({ request }: Route.LoaderArgs) {
     siteTitle: settings.siteTitle,
     counts: counts ?? { total: 0, published: 0, drafts: 0 },
     recent: recent.results,
+    timeZone: normalizeTimeZone(environment.TIMEZONE),
   };
 }
 
@@ -59,7 +62,7 @@ export default function AdminIndex({ loaderData }: Route.ComponentProps) {
           {loaderData.recent.length ? loaderData.recent.map((post) => (
             <Link key={post.id} to={`/admin/posts/${post.id}/edit`} className="flex items-center justify-between gap-4 px-5 py-4 hover:bg-violet-50/50">
               <span className="truncate font-medium">{post.title}</span>
-              <span className="shrink-0 text-xs text-slate-500">{post.status === "published" ? "已发布" : "草稿"} · {post.updated_at.slice(0, 10)}</span>
+              <span className="shrink-0 text-xs text-slate-500">{post.status === "published" ? "已发布" : "草稿"} · {formatDate(post.updated_at, loaderData.timeZone)}</span>
             </Link>
           )) : <p className="px-5 py-10 text-sm text-slate-500">还没有文章。新建一篇草稿开始写作。</p>}
         </div>

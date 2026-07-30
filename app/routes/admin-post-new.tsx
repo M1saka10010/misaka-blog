@@ -2,7 +2,7 @@ import { redirect } from "react-router";
 import type { Route } from "./+types/admin-post-new";
 import { AdminPageHeader, AdminShell } from "~/components/admin-shell";
 import { PostEditorForm } from "~/components/post-editor-form";
-import { createPost, getAdminSiteTitle, listAdminTags, normalizeSlug, normalizeTagNames } from "~/server/admin-data.server";
+import { createPost, getAdminSiteTitle, isPostSlugAvailable, listAdminTags, normalizeSlug, normalizeTagNames } from "~/server/admin-data.server";
 import { assertSameOrigin, requireAdmin } from "~/server/auth.server";
 import { estimateReadingMinutes, renderArticleMarkdown, resolvePostSummary } from "~/server/markdown.server";
 import { getEnvironment } from "~/server/env.server";
@@ -29,6 +29,7 @@ export async function action({ request }: Route.ActionArgs) {
   const slug = normalizeSlug(String(form.get("slug") ?? ""));
   const markdown = String(form.get("markdown") ?? "");
   if (!title || !slug || !markdown.trim()) return { error: "标题、Slug 和正文不能为空" };
+  if (!await isPostSlugAvailable(environment.DB, slug)) return { error: "该 Slug 已被其他文章使用，请更换后重试" };
   const id = await createPost(environment.DB, {
     title, slug, markdown,
     summary: resolvePostSummary(String(form.get("summary") ?? ""), markdown),

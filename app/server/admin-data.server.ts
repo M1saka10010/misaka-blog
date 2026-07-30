@@ -44,19 +44,51 @@ export async function getAdminSiteTitle(database: D1Database) {
   return settings?.site_title || "MISAKA.LOG";
 }
 
-export async function listAdminPosts(database: D1Database) {
-  const result = await database.prepare(
-    `SELECT id, title, slug, status, published_at, updated_at
-     FROM posts ORDER BY updated_at DESC`,
-  ).all<{
+const ADMIN_POSTS_PER_PAGE = 20;
+
+export interface PaginatedAdminPosts {
+  posts: Array<{
     id: number;
     title: string;
     slug: string;
     status: "draft" | "published";
     published_at: string | null;
-    updated_at: string;
+    created_at: string;
+  }>;
+  page: number;
+  totalPages: number;
+  totalPosts: number;
+}
+
+export async function listAdminPosts(database: D1Database, requestedPage: number): Promise<PaginatedAdminPosts> {
+  const countRow = await database.prepare("SELECT COUNT(*) AS count FROM posts").first<{ count: number }>();
+  const totalPosts = countRow?.count ?? 0;
+  const totalPages = Math.max(1, Math.ceil(totalPosts / ADMIN_POSTS_PER_PAGE));
+  const normalizedPage = Number.isSafeInteger(requestedPage) && requestedPage > 0 ? requestedPage : 1;
+  const page = Math.min(normalizedPage, totalPages);
+  const offset = (page - 1) * ADMIN_POSTS_PER_PAGE;
+  const result = await database.prepare(
+    `SELECT id, title, slug, status, published_at, created_at
+     FROM posts ORDER BY created_at DESC, id DESC
+     LIMIT ? OFFSET ?`,
+  ).bind(ADMIN_POSTS_PER_PAGE, offset).all<{
+    id: number;
+    title: string;
+    slug: string;
+    status: "draft" | "published";
+    published_at: string | null;
+    created_at: string;
   }>();
-  return result.results;
+  return { posts: result.results, page, totalPages, totalPosts };
+}
+
+export async function isPostSlugAvailable(database: D1Database, slug: string, excludedPostId?: number) {
+  const existingPost = await database.prepare(
+    `SELECT id FROM posts
+     WHERE slug = ? AND (? IS NULL OR id != ?)
+     LIMIT 1`,
+  ).bind(slug, excludedPostId ?? null, excludedPostId ?? null).first<{ id: number }>();
+  return !existingPost;
 }
 
 export async function getAdminPost(database: D1Database, id: number) {

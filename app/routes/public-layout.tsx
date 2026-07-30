@@ -3,17 +3,20 @@ import { Form, Link, NavLink, Outlet, useLocation, type LoaderFunctionArgs, type
 
 import { ElectricMark } from "~/components/public/electric-mark";
 import { CloseIcon, MenuIcon, SearchIcon } from "~/components/public/icons";
+import { normalizeTimeZone } from "~/lib/public-context";
 import { getDatabase } from "~/server/database.server";
 import { getArchiveMonths, getPopularTags, getSiteSettings } from "~/server/db/public";
+import { getEnvironment } from "~/server/env.server";
 
 export async function loader({}: LoaderFunctionArgs) {
   const db = getDatabase();
+  const timeZone = normalizeTimeZone(getEnvironment().TIMEZONE);
   const [settings, popularTags, recentArchive] = await Promise.all([
     getSiteSettings(db),
     getPopularTags(db, 8),
     getArchiveMonths(db, 6),
   ]);
-  return { settings, popularTags, recentArchive };
+  return { settings, popularTags, recentArchive, timeZone };
 }
 
 export const meta: MetaFunction<typeof loader> = ({ loaderData }) => [
@@ -28,7 +31,7 @@ function HeaderLink({ to, children }: { to: string; children: React.ReactNode })
 export default function PublicLayout({ loaderData }: { loaderData: Awaited<ReturnType<typeof loader>> }) {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const location = useLocation();
-  const { settings } = loaderData;
+  const { settings, timeZone } = loaderData;
   const backgroundStyle = {
     "--background-image": settings.backgroundUrl ? `url("${settings.backgroundUrl.replaceAll('"', '\\"')}")` : "none",
     "--background-x": `${settings.backgroundPositionX}%`,
@@ -88,7 +91,7 @@ export default function PublicLayout({ loaderData }: { loaderData: Awaited<Retur
         <Outlet context={loaderData} />
       </div>
       <footer className="relative z-10 mt-auto shrink-0 border-t border-line bg-surface/90 px-5 py-4 text-center text-xs text-muted backdrop-blur-sm">
-        <p>© {new Date().getUTCFullYear()} {settings.siteTitle} · Powered by Cloudflare Workers</p>
+        <p>© {new Intl.DateTimeFormat("zh-CN", { year: "numeric", timeZone }).format(new Date())} {settings.siteTitle} · Powered by Cloudflare Workers</p>
       </footer>
     </div>
   );

@@ -23,7 +23,7 @@ export async function loader({ request }: Route.LoaderArgs) {
 
 export async function action({ request }: Route.ActionArgs) {
   const environment = getEnvironment();
-  await requireAdmin(request, environment); assertSameOrigin(request);
+  await requireAdmin(request, environment); assertSameOrigin(request, environment);
   const form = await request.formData();
   const title = String(form.get("title") ?? "").trim();
   const slug = normalizeSlug(String(form.get("slug") ?? ""));

@@ -30,7 +30,7 @@ export function meta({ loaderData }: Route.MetaArgs) {
 }
 export async function action({ request }: Route.ActionArgs) {
   const environment = getEnvironment();
-  await requireAdmin(request, environment); assertSameOrigin(request); const form = await request.formData();
+  await requireAdmin(request, environment); assertSameOrigin(request, environment); const form = await request.formData();
   const profileMarkdown = String(form.get("profile_markdown") ?? "");
   let avatarUrl: string;
   let backgroundUrl: string;

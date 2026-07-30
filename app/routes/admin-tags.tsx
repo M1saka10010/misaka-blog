@@ -26,7 +26,7 @@ export async function loader({ request }: Route.LoaderArgs) {
 export async function action({ request }: Route.ActionArgs) {
   const environment = getEnvironment();
   await requireAdmin(request, environment);
-  assertSameOrigin(request);
+  assertSameOrigin(request, environment);
   const form = await request.formData();
   const intent = String(form.get("intent") ?? "create");
   if (intent === "delete") {

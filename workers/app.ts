@@ -7,6 +7,7 @@ declare global {
     GITHUB_OAUTH_CLIENT_SECRET: string;
     GITHUB_ALLOWED_LOGIN: string;
     GITHUB_ALLOWED_USER_ID?: string;
+    PUBLIC_SITE_URL?: string;
     SESSION_SECRET: string;
   }
 }

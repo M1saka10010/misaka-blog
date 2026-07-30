@@ -46,13 +46,40 @@ async function hashToken(token: string) {
   return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
 }
 
-function isSecureRequest(request: Request) {
-  return new URL(request.url).protocol === "https:";
+export function resolvePublicOrigin(request: Request, configuredUrl?: string) {
+  const input = configuredUrl?.trim();
+  if (!input) return new URL(request.url).origin;
+
+  let publicUrl: URL;
+  try {
+    publicUrl = new URL(input);
+  } catch {
+    throw new Response("PUBLIC_SITE_URL 配置无效", { status: 503 });
+  }
+  if (
+    !["http:", "https:"].includes(publicUrl.protocol) ||
+    publicUrl.username ||
+    publicUrl.password ||
+    publicUrl.pathname !== "/" ||
+    publicUrl.search ||
+    publicUrl.hash
+  ) {
+    throw new Response("PUBLIC_SITE_URL 必须是仅包含协议和域名的站点地址", { status: 503 });
+  }
+  return publicUrl.origin;
 }
 
-export function assertSameOrigin(request: Request) {
+function callbackUrl(request: Request, env: AppEnvironment) {
+  return new URL("/auth/github/callback", `${resolvePublicOrigin(request, env.PUBLIC_SITE_URL)}/`).toString();
+}
+
+function isSecureRequest(request: Request, env: AppEnvironment) {
+  return new URL(resolvePublicOrigin(request, env.PUBLIC_SITE_URL)).protocol === "https:";
+}
+
+export function assertSameOrigin(request: Request, env: AppEnvironment) {
   const origin = request.headers.get("Origin");
-  if (origin && origin !== new URL(request.url).origin) {
+  if (origin && origin !== resolvePublicOrigin(request, env.PUBLIC_SITE_URL)) {
     throw new Response("请求来源无效", { status: 403 });
   }
 }
@@ -62,17 +89,17 @@ export function beginGitHubLogin(request: Request, env: AppEnvironment) {
     throw new Response("GitHub OAuth 尚未配置", { status: 503 });
   }
   const state = randomToken(24);
-  const callbackUrl = new URL("/auth/github/callback", request.url).toString();
+  const githubCallbackUrl = callbackUrl(request, env);
   const authorizeUrl = new URL("https://github.com/login/oauth/authorize");
   authorizeUrl.searchParams.set("client_id", env.GITHUB_OAUTH_CLIENT_ID);
-  authorizeUrl.searchParams.set("redirect_uri", callbackUrl);
+  authorizeUrl.searchParams.set("redirect_uri", githubCallbackUrl);
   authorizeUrl.searchParams.set("scope", "read:user");
   authorizeUrl.searchParams.set("state", state);
   return redirect(authorizeUrl.toString(), {
     headers: {
       "Set-Cookie": createCookie(oauthStateCookieName, state, {
         maxAge: 600,
-        secure: isSecureRequest(request),
+        secure: isSecureRequest(request, env),
       }),
       "Cache-Control": "private, no-store",
     },
@@ -87,7 +114,7 @@ async function exchangeGitHubCode(request: Request, env: AppEnvironment, code: s
       client_id: env.GITHUB_OAUTH_CLIENT_ID,
       client_secret: env.GITHUB_OAUTH_CLIENT_SECRET,
       code,
-      redirect_uri: new URL("/auth/github/callback", request.url).toString(),
+      redirect_uri: callbackUrl(request, env),
     }),
   });
   if (!tokenResponse.ok) throw new Response("GitHub 登录暂时不可用", { status: 502 });
@@ -144,10 +171,10 @@ export async function finishGitHubLogin(request: Request, env: AppEnvironment) {
         "Set-Cookie",
         createCookie(sessionCookieName, token, {
           maxAge: sessionLifetimeSeconds,
-          secure: isSecureRequest(request),
+          secure: isSecureRequest(request, env),
         }),
       ],
-      ["Set-Cookie", createCookie(oauthStateCookieName, "", { maxAge: 0, secure: isSecureRequest(request) })],
+      ["Set-Cookie", createCookie(oauthStateCookieName, "", { maxAge: 0, secure: isSecureRequest(request, env) })],
       ["Cache-Control", "private, no-store"],
     ],
   });
@@ -189,7 +216,7 @@ export async function requireAdmin(request: Request, env: AppEnvironment) {
 }
 
 export async function logoutAdmin(request: Request, env: AppEnvironment) {
-  assertSameOrigin(request);
+  assertSameOrigin(request, env);
   const token = parseCookies(request).get(sessionCookieName);
   if (token) {
     await env.DB.prepare("DELETE FROM admin_sessions WHERE token_hash = ?")
@@ -198,7 +225,7 @@ export async function logoutAdmin(request: Request, env: AppEnvironment) {
   }
   return redirect("/", {
     headers: {
-      "Set-Cookie": createCookie(sessionCookieName, "", { maxAge: 0, secure: isSecureRequest(request) }),
+      "Set-Cookie": createCookie(sessionCookieName, "", { maxAge: 0, secure: isSecureRequest(request, env) }),
       "Cache-Control": "private, no-store",
     },
   });

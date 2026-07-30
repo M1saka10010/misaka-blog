@@ -24,7 +24,7 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 }
 export async function action({ request, params }: Route.ActionArgs) {
   const environment = getEnvironment();
-  await requireAdmin(request, environment); assertSameOrigin(request);
+  await requireAdmin(request, environment); assertSameOrigin(request, environment);
   const form = await request.formData();
   const postId = getId(params.id);
   if (form.get("intent") === "delete") {

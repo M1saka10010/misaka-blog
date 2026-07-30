@@ -1,0 +1,5 @@
+GITHUB_OAUTH_CLIENT_ID="your-development-client-id"
+GITHUB_OAUTH_CLIENT_SECRET="your-development-client-secret"
+GITHUB_ALLOWED_LOGIN="your-github-login"
+GITHUB_ALLOWED_USER_ID="12345678"
+SESSION_SECRET="replace-with-at-least-32-random-characters"

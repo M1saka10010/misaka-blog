@@ -1,0 +1,44 @@
+{
+  "name": "misaka-blog",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "react-router build",
+    "dev": "react-router dev",
+    "typecheck": "react-router typegen && tsc --noEmit",
+    "test": "vitest run",
+    "cf-typegen": "wrangler types",
+    "cf:whoami": "wrangler whoami --env-file .wrangler.env",
+    "db:migrate:local": "wrangler d1 migrations apply DB --local",
+    "db:migrate:remote": "wrangler d1 migrations apply DB --remote --env-file .wrangler.env",
+    "deploy": "npm run build && wrangler deploy --env-file .wrangler.env"
+  },
+  "dependencies": {
+    "@milkdown/kit": "^7.21.3",
+    "@milkdown/react": "^7.21.3",
+    "isbot": "^5.1.36",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7",
+    "react-router": "^8.3.0",
+    "rehype-sanitize": "^6.0.0",
+    "rehype-stringify": "^10.0.1",
+    "remark-gfm": "^4.0.1",
+    "remark-parse": "^11.0.0",
+    "remark-rehype": "^11.1.2",
+    "unified": "^11.0.5"
+  },
+  "devDependencies": {
+    "@cloudflare/vite-plugin": "1.47.0",
+    "@cloudflare/workers-types": "^5.20260729.1",
+    "@react-router/dev": "^8.3.0",
+    "@tailwindcss/vite": "^4.2.2",
+    "@types/node": "^22.19.11",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "tailwindcss": "^4.2.2",
+    "typescript": "^5.9.3",
+    "vite": "^8.0.3",
+    "vitest": "^4.0.18",
+    "wrangler": "4.114.0"
+  }
+}

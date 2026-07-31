@@ -29,7 +29,8 @@ export function PostList({ data, emptyMessage = "还没有已发布的文章。"
   return (
     <ol className="divide-y divide-line">
       {data.posts.map((post) => (
-        <li key={post.slug} className="group py-7 first:pt-6 lg:py-9">
+        <li key={post.slug} className="group relative py-7 first:pt-6 lg:py-9">
+          <span aria-hidden="true" className="absolute -left-3 bottom-9 top-7 w-0.5 rounded-full bg-accent opacity-0 transition-opacity duration-200 group-hover:opacity-100 motion-reduce:transition-none md:-left-4" />
           <article>
             <div className="flex flex-wrap items-center gap-x-3 gap-y-2 font-mono text-xs text-muted">
               <time dateTime={post.publishedAt}>{formatPublishedDate(post.publishedAt, timeZone)}</time>

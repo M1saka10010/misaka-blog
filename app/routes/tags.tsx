@@ -18,9 +18,9 @@ export default function Tags({ loaderData }: { loaderData: Awaited<ReturnType<ty
         <ul className="divide-y divide-line border-y border-line">
           {loaderData.tags.map((tag) => (
             <li key={tag.slug}>
-              <Link to={`/tags/${tag.slug}`} className="group flex min-h-16 items-center justify-between gap-5 px-2 py-3 text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2">
+              <Link to={`/tags/${tag.slug}`} className="group flex min-h-16 items-center justify-between gap-5 rounded-lg px-2 py-3 text-ink transition-colors hover:bg-accent-soft/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2">
                 <span className="font-display text-lg font-semibold transition-colors group-hover:text-accent"><span className="mr-2 font-mono text-sm text-mint-strong">#</span>{tag.name}</span>
-                <span className="font-mono text-xs text-muted">{tag.postCount} 篇</span>
+                <span className="rounded-full border border-line bg-page px-2.5 py-1 font-mono text-xs text-muted transition-colors group-hover:border-accent/30 group-hover:text-accent">{tag.postCount} 篇</span>
               </Link>
             </li>
           ))}

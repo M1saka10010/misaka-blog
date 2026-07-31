@@ -26,7 +26,7 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
 export default function TagDetail({ loaderData }: { loaderData: Awaited<ReturnType<typeof loader>> }) {
   return (
     <PublicPageFrame>
-      <PageHeading eyebrow="Topic archive" title={`#${loaderData.tag.name}`} description={`共 ${loaderData.tag.postCount} 篇已发布文章。`} />
+      <PageHeading eyebrow="Topic archive" title={`#${loaderData.tag.name}`} description={`共 ${loaderData.tag.postCount} 篇已发布文章。`} compact />
       <PostList data={loaderData.posts} emptyMessage="这个标签下暂时没有已发布文章。" />
       <Pagination page={loaderData.posts.page} totalPages={loaderData.posts.totalPages} />
     </PublicPageFrame>

@@ -1,5 +1,5 @@
-import { useState, type CSSProperties } from "react";
-import { Form, Link, NavLink, Outlet, useLocation, type LoaderFunctionArgs, type MetaFunction } from "react-router";
+import { useEffect, useState, type CSSProperties } from "react";
+import { Form, Link, NavLink, Outlet, useLocation, useNavigation, type LoaderFunctionArgs, type MetaFunction } from "react-router";
 
 import { ElectricMark } from "~/components/public/electric-mark";
 import { CloseIcon, MenuIcon, SearchIcon } from "~/components/public/icons";
@@ -30,8 +30,18 @@ function HeaderLink({ to, children }: { to: string; children: React.ReactNode })
 
 export default function PublicLayout({ loaderData }: { loaderData: Awaited<ReturnType<typeof loader>> }) {
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
   const location = useLocation();
+  const navigation = useNavigation();
   const { settings, timeZone } = loaderData;
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 8);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
   const backgroundStyle = {
     "--background-image": settings.backgroundUrl ? `url("${settings.backgroundUrl.replaceAll('"', '\\"')}")` : "none",
     "--background-x": `${settings.backgroundPositionX}%`,
@@ -41,10 +51,16 @@ export default function PublicLayout({ loaderData }: { loaderData: Awaited<Retur
     "--background-overlay": String(settings.backgroundOverlay / 100),
   } as CSSProperties;
 
+  const backToTop = () => {
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    window.scrollTo({ top: 0, behavior: reduce ? "auto" : "smooth" });
+  };
+
   return (
     <div className="site-scene flex min-h-screen min-h-dvh flex-col" style={backgroundStyle} data-theme={settings.themeMode}>
       <a href="#main-content" className="fixed left-4 top-2 z-[60] -translate-y-20 rounded-lg bg-accent px-4 py-3 text-sm font-medium text-white transition-transform focus:translate-y-0">跳到正文</a>
-      <header className="fixed inset-x-0 top-0 z-40 h-14 border-b border-line bg-surface/95 backdrop-blur-md lg:h-16" aria-label="站点导航">
+      {navigation.state !== "idle" && <span className="nav-progress" aria-hidden="true" />}
+      <header className={`fixed inset-x-0 top-0 z-40 h-14 border-b border-line bg-surface/95 backdrop-blur-md transition-shadow duration-200 lg:h-16 ${scrolled ? "header-scrolled" : ""}`} aria-label="站点导航">
         <div className="mx-auto flex h-full max-w-7xl items-center justify-between px-4 md:px-8">
           <div className="flex items-center gap-2">
             <button type="button" className="grid h-11 w-11 place-items-center rounded-lg text-ink lg:hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent" onClick={() => setDrawerOpen(true)} aria-label="打开导航" aria-expanded={drawerOpen}>
@@ -87,11 +103,24 @@ export default function PublicLayout({ loaderData }: { loaderData: Awaited<Retur
         </aside>
       </div>
 
-      <div id="main-content" className="relative z-10 flex-1 pt-14 lg:pt-16" key={location.pathname}>
+      <div id="main-content" className="page-enter relative z-10 flex-1 pt-14 lg:pt-16" key={location.pathname}>
         <Outlet context={loaderData} />
       </div>
-      <footer className="relative z-10 mt-auto shrink-0 border-t border-line bg-surface/90 px-5 py-4 text-center text-xs text-muted backdrop-blur-sm">
-        <p>© {new Intl.DateTimeFormat("zh-CN", { year: "numeric", timeZone }).format(new Date())} {settings.siteTitle} · Powered by Cloudflare Workers</p>
+      <footer className="relative z-10 mt-auto shrink-0 border-t border-line bg-surface/90 backdrop-blur-sm">
+        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-3 px-5 py-5 text-xs text-muted md:flex-row md:px-8">
+          <p>© {new Intl.DateTimeFormat("zh-CN", { year: "numeric", timeZone }).format(new Date())} {settings.siteTitle} · Powered by Cloudflare Workers</p>
+          <div className="flex items-center gap-1">
+            <nav className="flex items-center gap-1" aria-label="页脚导航">
+              {[{ to: "/", label: "文章" }, { to: "/tags", label: "标签" }, { to: "/archive", label: "归档" }, { to: "/friends", label: "友链" }].map((item) => (
+                <Link key={item.to} to={item.to} className="inline-flex min-h-11 items-center rounded-lg px-2.5 transition-colors hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent md:min-h-9">{item.label}</Link>
+              ))}
+            </nav>
+            <span aria-hidden="true" className="mx-2 h-3 w-px bg-line" />
+            <button type="button" onClick={backToTop} className="inline-flex min-h-11 items-center gap-1.5 rounded-lg px-2.5 font-medium transition-colors hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent md:min-h-9" aria-label="回到页面顶部">
+              回到顶部 <span aria-hidden="true" className="text-sm leading-none">↑</span>
+            </button>
+          </div>
+        </div>
       </footer>
     </div>
   );

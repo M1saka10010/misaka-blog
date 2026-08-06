@@ -5,13 +5,24 @@ import type { PublicLayoutData } from "~/lib/public-context";
 import { ArchiveSection, TagSection } from "./sidebar-sections";
 import { ProfileCard } from "./profile-card";
 
-export function PublicPageFrame({ children, narrow = false }: { children: ReactNode; narrow?: boolean }) {
+export function PublicPageFrame({
+  children,
+  narrow = false,
+  stickySidebar = true,
+}: {
+  children: ReactNode;
+  narrow?: boolean;
+  stickySidebar?: boolean;
+}) {
   const { settings, popularTags, recentArchive } = useOutletContext<PublicLayoutData>();
 
   return (
     <div className={`mx-auto w-full px-5 pb-16 pt-6 md:px-8 lg:pb-24 lg:pt-10 ${narrow ? "max-w-6xl" : "max-w-7xl"}`}>
       <div className="lg:grid lg:grid-cols-[20rem_minmax(0,1fr)] lg:items-start lg:gap-10 xl:gap-16">
-        <aside className="sidebar-scrollbar-hidden hidden lg:sticky lg:top-24 lg:block lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto lg:overscroll-contain lg:pr-2" aria-label="博客资料">
+        <aside
+          className={`hidden lg:block lg:pr-2 ${stickySidebar ? "sidebar-scrollbar-hidden lg:sticky lg:top-24 lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto lg:overscroll-contain" : ""}`}
+          aria-label="博客资料"
+        >
           <ProfileCard settings={settings} />
           <div className="mt-6 rounded-xl border border-line bg-surface/95 p-5 shadow-soft backdrop-blur-sm">
             <TagSection tags={popularTags} />

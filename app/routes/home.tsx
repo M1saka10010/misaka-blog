@@ -18,7 +18,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export default function Home({ loaderData }: { loaderData: Awaited<ReturnType<typeof loader>> }) {
   return (
-    <PublicPageFrame>
+    <PublicPageFrame stickySidebar={false}>
       <PostList data={loaderData} />
       <Pagination page={loaderData.page} totalPages={loaderData.totalPages} />
     </PublicPageFrame>

@@ -1,4 +1,4 @@
-import { resolvePostSummary } from "~/server/markdown.server";
+import { RENDER_MARKER, renderArticleMarkdown, resolvePostSummary } from "~/server/markdown.server";
 
 export const POSTS_PER_PAGE = 8;
 
@@ -15,6 +15,7 @@ export interface SiteSettings {
   mobileBackgroundPositionX: number;
   mobileBackgroundPositionY: number;
   backgroundOverlay: number;
+  backgroundColor: string;
   githubUrl: string;
   email: string;
   themeMode: "system" | "light" | "dark";
@@ -65,6 +66,7 @@ interface SiteSettingsRow {
   mobile_background_position_x: number;
   mobile_background_position_y: number;
   background_overlay: number;
+  background_color: string;
   github_url: string;
   email: string;
   theme_mode: SiteSettings["themeMode"];
@@ -109,6 +111,7 @@ const DEFAULT_SETTINGS: SiteSettings = {
   mobileBackgroundPositionX: 50,
   mobileBackgroundPositionY: 30,
   backgroundOverlay: 48,
+  backgroundColor: "",
   githubUrl: "",
   email: "",
   themeMode: "system",
@@ -148,6 +151,7 @@ function mapSettings(row: SiteSettingsRow | null): SiteSettings {
     mobileBackgroundPositionX: row.mobile_background_position_x,
     mobileBackgroundPositionY: row.mobile_background_position_y,
     backgroundOverlay: row.background_overlay,
+    backgroundColor: row.background_color,
     githubUrl: row.github_url,
     email: row.email,
     themeMode: row.theme_mode,
@@ -321,7 +325,57 @@ export async function getPostBySlug(db: D1Database, slug: string): Promise<Publi
     .bind(slug)
     .first<PostDetailRow>();
 
-  return row ? { ...mapPost(row), renderedHtml: row.rendered_html } : null;
+  if (!row) return null;
+
+  // 旧渲染结果不含版本标记时，用当前管线重渲染并落库
+  let renderedHtml = row.rendered_html;
+  if (!renderedHtml.endsWith(RENDER_MARKER) && row.markdown.trim()) {
+    renderedHtml = await renderArticleMarkdown(row.markdown);
+    await db.prepare("UPDATE posts SET rendered_html = ? WHERE slug = ?").bind(renderedHtml, slug).run();
+  }
+
+  return { ...mapPost(row), renderedHtml };
+}
+
+export interface PostIndexEntry {
+  title: string;
+  slug: string;
+  summary: string;
+  publishedAt: string;
+}
+
+// RSS 与 sitemap 使用的轻量文章索引
+export async function getPublishedPostIndex(db: D1Database, limit = 500): Promise<PostIndexEntry[]> {
+  const result = await db
+    .prepare("SELECT title, slug, summary, markdown, published_at FROM posts WHERE status = 'published' AND published_at IS NOT NULL ORDER BY published_at DESC, id DESC LIMIT ?")
+    .bind(limit)
+    .all<{ title: string; slug: string; summary: string; markdown: string; published_at: string }>();
+
+  return result.results.map((row) => ({
+    title: row.title,
+    slug: row.slug,
+    summary: resolvePostSummary(row.summary, row.markdown),
+    publishedAt: row.published_at,
+  }));
+}
+
+export interface AdjacentPosts {
+  newer: { title: string; slug: string } | null;
+  older: { title: string; slug: string } | null;
+}
+
+export async function getAdjacentPosts(db: D1Database, publishedAt: string): Promise<AdjacentPosts> {
+  const [newer, older] = await Promise.all([
+    db
+      .prepare("SELECT title, slug FROM posts WHERE status = 'published' AND published_at > ? ORDER BY published_at ASC, id ASC LIMIT 1")
+      .bind(publishedAt)
+      .first<{ title: string; slug: string }>(),
+    db
+      .prepare("SELECT title, slug FROM posts WHERE status = 'published' AND published_at < ? ORDER BY published_at DESC, id DESC LIMIT 1")
+      .bind(publishedAt)
+      .first<{ title: string; slug: string }>(),
+  ]);
+  return { newer: newer ?? null, older: older ?? null };
 }
 
 function buildFtsQuery(query: string): string {

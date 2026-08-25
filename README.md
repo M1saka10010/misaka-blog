@@ -5,10 +5,13 @@
 ## 功能
 
 - 响应式公开博客、文章分页、标签、归档和全文搜索。
+- 浅色/深色主题：站主设置默认主题，读者可在页脚覆盖（localStorage 记忆，跟随系统/浅色/深色）。
+- RSS 订阅（`/feed.xml`）与站点地图（`/sitemap.xml`）。
+- 文章页标题锚点、代码块复制按钮、外链新标签标记、上下篇导航和阅读进度。
 - Milkdown 富文本编辑器，Markdown 作为文章源数据。
 - GitHub OAuth 单管理员登录。
 - 后台管理文章、标签、友情链接和站点设置。
-- 背景、头像和正文图片使用外部 HTTPS 图床链接。
+- 背景、头像和正文图片使用外部 HTTPS 图床链接；背景支持主色占位与淡入。
 - 友情链接默认读取目标站点的 `/favicon.ico`。
 
 ## 从 Sonic 迁移
@@ -275,6 +278,8 @@ https://misaka-blog.<你的-workers子域>.workers.dev/admin/login
 /archive          归档
 /friends          友情链接
 /search?q=test    搜索
+/feed.xml         RSS 订阅
+/sitemap.xml      站点地图
 /admin/login      后台登录
 ```
 

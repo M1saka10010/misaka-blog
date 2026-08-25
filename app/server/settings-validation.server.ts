@@ -25,3 +25,12 @@ export function normalizeSettingsHttpsUrl(value: FormDataEntryValue | null, fiel
 
   return url.toString();
 }
+
+export function normalizeBackgroundColor(value: FormDataEntryValue | null) {
+  const input = String(value ?? "").trim();
+  if (!input) return "";
+  if (!/^#[0-9a-fA-F]{6}$/.test(input)) {
+    throw new SettingsValidationError("背景主色格式无效，请使用 #RRGGBB 形式的十六进制颜色");
+  }
+  return input.toLowerCase();
+}

@@ -28,7 +28,7 @@ export default function Archive({ loaderData }: { loaderData: Awaited<ReturnType
                 {months.map((item) => (
                   <li key={item.month}>
                     <Link className="group flex min-h-14 items-center justify-between rounded-lg px-2 text-ink-soft hover:bg-accent-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent" to={`/archive/${item.year}/${item.month}`}>
-                      <time className="font-display text-base font-semibold group-hover:text-accent" dateTime={`${item.year}-${String(item.month).padStart(2, "0")}`}>{String(item.month).padStart(2, "0")} 月</time>
+                      <time className="font-display text-base font-semibold tabular-nums group-hover:text-accent-ink" dateTime={`${item.year}-${String(item.month).padStart(2, "0")}`}>{String(item.month).padStart(2, "0")} 月</time>
                       <span className="font-mono text-xs text-muted">{item.postCount} 篇</span>
                     </Link>
                   </li>

@@ -33,12 +33,12 @@ export default function Friends({ loaderData }: { loaderData: Awaited<ReturnType
                   <FriendLinkIcon src={friend.iconUrl} name={friend.name} />
                   <span className="min-w-0 flex-1">
                     <span className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-                      <strong className="font-display text-base font-semibold transition-colors group-hover:text-accent sm:text-lg">{friend.name}</strong>
+                      <strong className="font-display text-base font-semibold transition-colors group-hover:text-accent-ink sm:text-lg">{friend.name}</strong>
                       <span className="font-mono text-xs text-muted">{hostname}</span>
                     </span>
                     {friend.description ? <span className="mt-1.5 line-clamp-2 block text-sm leading-6 text-ink-soft">{friend.description}</span> : null}
                   </span>
-                  <span className="shrink-0 text-lg text-muted transition group-hover:translate-x-1 group-hover:text-accent motion-reduce:transition-none" aria-hidden="true">↗</span>
+                  <span className="shrink-0 text-lg text-muted transition group-hover:translate-x-1 group-hover:text-accent-ink motion-reduce:transition-none" aria-hidden="true">↗</span>
                 </a>
               </li>
             );

@@ -39,4 +39,24 @@ describe("内容工具", () => {
     expect(html).not.toContain("<img");
     expect(html).toContain("<strong>简介</strong>");
   });
+
+  it("文章标题生成锚点并去重", async () => {
+    const html = await renderArticleMarkdown("## 部署 指南\n\n正文\n\n## 部署 指南");
+    expect(html).toContain('id="部署-指南"');
+    expect(html).toContain('id="部署-指南-2"');
+    expect(html).toContain('class="heading-anchor" href="#部署-指南"');
+  });
+
+  it("文章外链添加新标签标记，内链不受影响", async () => {
+    const html = await renderArticleMarkdown("[外部](https://example.com) 和 [内部](/posts/hello)");
+    expect(html).toContain('href="https://example.com" class="external-link" target="_blank" rel="noopener noreferrer"');
+    expect(html).toContain('<a href="/posts/hello">内部</a>');
+  });
+
+  it("代码块包裹复制按钮", async () => {
+    const html = await renderArticleMarkdown("```js\nconsole.log(1)\n```");
+    expect(html).toContain('class="code-block"');
+    expect(html).toContain('class="code-copy"');
+    expect(html).toContain("复制");
+  });
 });

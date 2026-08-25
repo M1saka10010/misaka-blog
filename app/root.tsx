@@ -22,8 +22,12 @@ export async function loader({}: Route.LoaderArgs) {
 export const meta: Route.MetaFunction = () => [
   { title: "MISAKA.LOG" },
   { name: "description", content: "记录代码、生活，以及偶尔出现的二次元观察。" },
-  { name: "theme-color", content: "#f7f8fc" },
+  { name: "theme-color", content: "#f7f8fc", media: "(prefers-color-scheme: light)" },
+  { name: "theme-color", content: "#0d0f16", media: "(prefers-color-scheme: dark)" },
 ];
+
+// 首帧前应用读者主题偏好，并为配置了背景图的页面打上加载中标记（主色占位 → 图片淡入）
+const readerPreferenceScript = `(function(){try{var t=localStorage.getItem("misaka-theme");var s=document.querySelector(".site-scene");if(!s)return;if(t==="light"||t==="dark"||t==="system")s.setAttribute("data-theme",t);if(s.getAttribute("data-has-bg")==="true")s.setAttribute("data-bg-pending","");}catch(e){}})();`;
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const loaderData = useRouteLoaderData<typeof loader>("root");
@@ -33,11 +37,13 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         {loaderData?.faviconUrl ? <link rel="icon" href={loaderData.faviconUrl} /> : null}
+        <link rel="alternate" type="application/rss+xml" title="RSS" href="/feed.xml" />
         <Meta />
         <Links />
       </head>
       <body>
         {children}
+        <script dangerouslySetInnerHTML={{ __html: readerPreferenceScript }} />
         <ScrollRestoration />
         <Scripts />
       </body>
@@ -65,7 +71,7 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
   return (
     <main className="grid min-h-screen place-items-center bg-page px-5 py-16 text-ink">
       <div className="w-full max-w-lg rounded-xl border border-line bg-surface p-8 shadow-soft md:p-12">
-        <p className="font-mono text-xs font-semibold uppercase tracking-[0.18em] text-accent">Error {status}</p>
+        <p className="font-mono text-xs font-semibold uppercase tracking-[0.18em] text-accent-ink">Error {status}</p>
         <h1 className="mt-4 font-display text-3xl font-semibold tracking-tight">{title}</h1>
         <p className="mt-4 text-sm leading-7 text-ink-soft">{detail}</p>
         <Link to="/" className="mt-8 inline-flex min-h-11 items-center rounded-lg bg-accent px-5 text-sm font-medium text-white transition-colors hover:bg-accent-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2">返回首页</Link>

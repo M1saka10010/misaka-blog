@@ -25,7 +25,7 @@ export function ProfileCard({ settings }: { settings: SiteSettings }) {
         {settings.avatarUrl ? (
           <img className="h-16 w-16 rounded-xl border border-line object-cover" src={settings.avatarUrl} alt="站主头像" />
         ) : (
-          <div className="grid h-16 w-16 place-items-center rounded-xl border border-accent/25 bg-accent-soft font-display text-xl font-semibold text-accent" aria-hidden="true">
+          <div className="grid h-16 w-16 place-items-center rounded-xl border border-accent/25 bg-accent-soft font-display text-xl font-semibold text-accent-ink" aria-hidden="true">
             M
           </div>
         )}
@@ -51,7 +51,7 @@ export function ProfileCard({ settings }: { settings: SiteSettings }) {
         {settings.profileRenderedHtml && (collapsible || expanded) && (
           <button
             type="button"
-            className="mt-2 min-h-11 text-sm font-medium text-accent transition-colors hover:text-accent-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
+            className="mt-2 min-h-11 text-sm font-medium text-accent-ink transition-colors hover:text-accent-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
             onClick={() => setExpanded((value) => !value)}
             aria-expanded={expanded}
           >
@@ -63,12 +63,12 @@ export function ProfileCard({ settings }: { settings: SiteSettings }) {
       {(settings.githubUrl || settings.email) && (
         <div className="mt-4 flex gap-2 border-t border-line pt-4">
           {settings.githubUrl && (
-            <a className="grid h-11 w-11 place-items-center rounded-lg text-muted transition-colors hover:bg-accent-soft hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2" href={settings.githubUrl} target="_blank" rel="noreferrer" aria-label="访问 GitHub">
+            <a className="grid h-11 w-11 place-items-center rounded-lg text-muted transition-colors hover:bg-accent-soft hover:text-accent-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2" href={settings.githubUrl} target="_blank" rel="noreferrer" aria-label="访问 GitHub">
               <GithubIcon className="h-5 w-5" />
             </a>
           )}
           {settings.email && (
-            <a className="grid h-11 w-11 place-items-center rounded-lg text-muted transition-colors hover:bg-accent-soft hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2" href={`mailto:${settings.email}`} aria-label="发送邮件">
+            <a className="grid h-11 w-11 place-items-center rounded-lg text-muted transition-colors hover:bg-accent-soft hover:text-accent-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2" href={`mailto:${settings.email}`} aria-label="发送邮件">
               <MailIcon className="h-5 w-5" />
             </a>
           )}

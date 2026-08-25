@@ -11,6 +11,8 @@ export default [
     route("friends", "routes/friends.tsx"),
     route("search", "routes/search.tsx"),
   ]),
+  route("feed.xml", "routes/feed-xml.ts"),
+  route("sitemap.xml", "routes/sitemap-xml.ts"),
   route("admin/login", "routes/admin-login.tsx"),
   route("auth/github", "routes/auth-github.ts"),
   route("auth/github/callback", "routes/auth-github-callback.ts"),

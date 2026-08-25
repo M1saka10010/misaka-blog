@@ -6,16 +6,16 @@ import { MarkdownEditor } from "~/components/markdown-editor";
 import { assertSameOrigin, requireAdmin } from "~/server/auth.server";
 import { renderProfileMarkdown } from "~/server/markdown.server";
 import { getEnvironment } from "~/server/env.server";
-import { normalizeSettingsHttpsUrl, SettingsValidationError } from "~/server/settings-validation.server";
+import { normalizeBackgroundColor, normalizeSettingsHttpsUrl, SettingsValidationError } from "~/server/settings-validation.server";
 
 interface SettingsRow {
   site_title: string; site_description: string; favicon_url: string; avatar_url: string; profile_handle: string;
   profile_markdown: string; background_url: string; background_position_x: number; background_position_y: number;
   mobile_background_position_x: number; mobile_background_position_y: number; background_overlay: number;
-  github_url: string; email: string; theme_mode: "system" | "light" | "dark";
+  background_color: string; github_url: string; email: string; theme_mode: "system" | "light" | "dark";
 }
 
-const defaultSettings: SettingsRow = { site_title: "MISAKA.LOG", site_description: "记录代码、生活，以及偶尔出现的二次元观察。", favicon_url: "", avatar_url: "", profile_handle: "", profile_markdown: "", background_url: "", background_position_x: 50, background_position_y: 50, mobile_background_position_x: 50, mobile_background_position_y: 30, background_overlay: 48, github_url: "", email: "", theme_mode: "system" };
+const defaultSettings: SettingsRow = { site_title: "MISAKA.LOG", site_description: "记录代码、生活，以及偶尔出现的二次元观察。", favicon_url: "", avatar_url: "", profile_handle: "", profile_markdown: "", background_url: "", background_position_x: 50, background_position_y: 50, mobile_background_position_x: 50, mobile_background_position_y: 30, background_overlay: 48, background_color: "", github_url: "", email: "", theme_mode: "system" };
 function boundedNumber(form: FormData, name: string, fallback: number, max = 100) { const value = Number(form.get(name)); return Number.isFinite(value) ? Math.min(max, Math.max(0, Math.round(value))) : fallback; }
 
 export async function loader({ request }: Route.LoaderArgs) {
@@ -36,11 +36,13 @@ export async function action({ request }: Route.ActionArgs) {
   let backgroundUrl: string;
   let faviconUrl: string;
   let githubUrl: string;
+  let backgroundColor: string;
   try {
     avatarUrl = normalizeSettingsHttpsUrl(form.get("avatar_url"), "Avatar URL");
     backgroundUrl = normalizeSettingsHttpsUrl(form.get("background_url"), "背景图片 URL");
     faviconUrl = normalizeSettingsHttpsUrl(form.get("favicon_url"), "Favicon URL");
     githubUrl = normalizeSettingsHttpsUrl(form.get("github_url"), "GitHub URL");
+    backgroundColor = normalizeBackgroundColor(form.get("background_color"));
   } catch (error) {
     if (error instanceof SettingsValidationError) return { error: error.message };
     throw error;
@@ -49,14 +51,14 @@ export async function action({ request }: Route.ActionArgs) {
     `UPDATE site_settings SET site_title = ?, site_description = ?, favicon_url = ?, avatar_url = ?, profile_handle = ?,
      profile_markdown = ?, profile_rendered_html = ?, background_url = ?, background_position_x = ?,
      background_position_y = ?, mobile_background_position_x = ?, mobile_background_position_y = ?,
-     background_overlay = ?, github_url = ?, email = ?, theme_mode = ?, updated_at = CURRENT_TIMESTAMP WHERE id = 1`,
+     background_overlay = ?, background_color = ?, github_url = ?, email = ?, theme_mode = ?, updated_at = CURRENT_TIMESTAMP WHERE id = 1`,
   ).bind(
     String(form.get("site_title") ?? "MISAKA.LOG").trim(), String(form.get("site_description") ?? "").trim(),
     faviconUrl, avatarUrl, String(form.get("profile_handle") ?? "").trim(), profileMarkdown,
     await renderProfileMarkdown(profileMarkdown), backgroundUrl,
     boundedNumber(form, "background_position_x", 50), boundedNumber(form, "background_position_y", 50),
     boundedNumber(form, "mobile_background_position_x", 50), boundedNumber(form, "mobile_background_position_y", 30),
-    boundedNumber(form, "background_overlay", 48, 90), githubUrl,
+    boundedNumber(form, "background_overlay", 48, 90), backgroundColor, githubUrl,
     String(form.get("email") ?? "").trim(), ["light", "dark"].includes(String(form.get("theme_mode"))) ? String(form.get("theme_mode")) : "system",
   ).run();
   return Response.redirect(new URL("/admin/settings?saved=1", request.url), 303);
@@ -148,6 +150,22 @@ function BackgroundSettings({ settings }: { settings: SettingsRow }) {
             <option value="light">浅色</option>
             <option value="dark">深色</option>
           </select>
+        </label>
+        <label>
+          <span className="mb-2 block text-sm font-medium">背景主色</span>
+          <span className="flex items-center gap-2">
+            <input
+              name="background_color"
+              defaultValue={settings.background_color}
+              placeholder="#0d0f16"
+              pattern="#[0-9a-fA-F]{6}"
+              className={inputClass}
+            />
+            {settings.background_color ? (
+              <span className="h-11 w-11 shrink-0 rounded-lg border border-slate-200" style={{ backgroundColor: settings.background_color }} aria-hidden="true" />
+            ) : null}
+          </span>
+          <span className="mt-1.5 block text-xs text-slate-400">背景图加载完成前的占位色，建议取图片主色调；留空则使用页面底色</span>
         </label>
       </div>
     </section>

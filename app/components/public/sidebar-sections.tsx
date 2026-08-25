@@ -11,7 +11,7 @@ export function TagSection({ tags }: { tags: PublicTag[] }) {
     <section aria-labelledby="popular-tags">
       <div className="flex items-center justify-between gap-4">
         <SectionHeading><span id="popular-tags">常用标签</span></SectionHeading>
-        <Link className="text-xs font-medium text-muted hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2" to="/tags">全部</Link>
+        <Link className="text-xs font-medium text-muted hover:text-accent-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2" to="/tags">全部</Link>
       </div>
       {tags.length > 0 ? (
         <div className="mt-4 flex flex-wrap gap-2">
@@ -31,15 +31,15 @@ export function ArchiveSection({ months }: { months: ArchiveMonth[] }) {
     <section className="border-t border-line pt-5" aria-labelledby="recent-archive">
       <div className="flex items-center justify-between gap-4">
         <SectionHeading><span id="recent-archive">文章归档</span></SectionHeading>
-        <Link className="text-xs font-medium text-muted hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2" to="/archive">全部</Link>
+        <Link className="text-xs font-medium text-muted hover:text-accent-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2" to="/archive">全部</Link>
       </div>
       {months.length > 0 ? (
         <ol className="mt-3">
           {months.map((item) => (
             <li key={`${item.year}-${item.month}`}>
-              <Link to={`/archive/${item.year}/${item.month}`} className="flex min-h-10 items-center justify-between rounded-lg px-2 text-sm text-ink-soft transition-colors hover:bg-accent-soft hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent">
-                <time className="font-mono" dateTime={`${item.year}-${String(item.month).padStart(2, "0")}`}>{item.year}.{String(item.month).padStart(2, "0")}</time>
-                <span className="font-mono text-xs text-muted">{item.postCount}</span>
+              <Link to={`/archive/${item.year}/${item.month}`} className="flex min-h-10 items-center justify-between rounded-lg px-2 text-sm text-ink-soft transition-colors hover:bg-accent-soft hover:text-accent-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent">
+                <time className="font-mono tabular-nums" dateTime={`${item.year}-${String(item.month).padStart(2, "0")}`}>{item.year}.{String(item.month).padStart(2, "0")}</time>
+                <span className="font-mono text-xs text-muted tabular-nums">{item.postCount}</span>
               </Link>
             </li>
           ))}

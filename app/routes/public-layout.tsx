@@ -1,6 +1,6 @@
 import { useEffect, useState, type CSSProperties } from "react";
 import { flushSync } from "react-dom";
-import { Form, Link, NavLink, Outlet, useLocation, useNavigation, type LoaderFunctionArgs, type MetaFunction } from "react-router";
+import { Form, Link, NavLink, Outlet, useLocation, useNavigation, type LoaderFunctionArgs } from "react-router";
 
 import { ElectricMark } from "~/components/public/electric-mark";
 import { CloseIcon, MenuIcon, MonitorIcon, MoonIcon, SearchIcon, SunIcon } from "~/components/public/icons";
@@ -19,13 +19,6 @@ export async function loader({}: LoaderFunctionArgs) {
   ]);
   return { settings, popularTags, recentArchive, timeZone };
 }
-
-export const meta: MetaFunction<typeof loader> = ({ loaderData }) => [
-  { title: loaderData?.settings.siteTitle ?? "MISAKA.LOG" },
-  { name: "description", content: loaderData?.settings.siteDescription ?? "" },
-  { property: "og:site_name", content: loaderData?.settings.siteTitle ?? "MISAKA.LOG" },
-  ...(loaderData?.settings.backgroundUrl ? [{ property: "og:image", content: loaderData.settings.backgroundUrl }] : []),
-];
 
 type ThemeChoice = "system" | "light" | "dark";
 

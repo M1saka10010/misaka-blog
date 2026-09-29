@@ -2,14 +2,27 @@ import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 
 import { FriendLinkIcon } from "~/components/public/friend-link-icon";
 import { PublicPageFrame } from "~/components/public/public-page-frame";
-import { getSiteTitleFromMatches } from "~/lib/public-context";
+import { siteMeta } from "~/lib/page-meta";
+import { getSiteOriginFromMatches, getSiteTitleFromMatches } from "~/lib/public-context";
+import { canonicalUrl } from "~/lib/site-urls";
+import { buildCollectionGraph } from "~/lib/structured-data";
 import { getDatabase } from "~/server/database.server";
 import { listPublicFriendLinks } from "~/server/friend-links.server";
 
-export const meta: MetaFunction = ({ matches }) => [
-  { title: `友情链接 · ${getSiteTitleFromMatches(matches)}` },
-  { name: "description", content: "一些值得拜访的网站和朋友。" },
-];
+export const meta: MetaFunction<typeof loader> = ({ matches }) => {
+  const origin = getSiteOriginFromMatches(matches);
+  const description = "一些值得拜访的网站和朋友。";
+
+  return [
+    ...siteMeta(matches),
+    { title: `友情链接 · ${getSiteTitleFromMatches(matches)}` },
+    { name: "description", content: description },
+    ...(origin ? [{ tagName: "link", rel: "canonical", href: canonicalUrl(origin, "/friends") }] : []),
+    ...(origin
+      ? [{ "script:ld+json": buildCollectionGraph({ origin, path: "/friends", name: "友情链接", description }) }]
+      : []),
+  ];
+};
 
 export async function loader({}: LoaderFunctionArgs) {
   return { links: await listPublicFriendLinks(getDatabase()) };

@@ -9,16 +9,29 @@ export interface PublicLayoutData {
   timeZone: string;
 }
 
-interface RouteMatchWithLoaderData {
+export interface RouteMatchWithLoaderData {
   loaderData: unknown;
 }
 
-export function getSiteTitleFromMatches(matches: readonly RouteMatchWithLoaderData[]) {
+export function getSiteSettingsFromMatches(matches: readonly RouteMatchWithLoaderData[]): SiteSettings | null {
   for (const match of matches) {
     const data = match.loaderData as Partial<PublicLayoutData> | undefined;
-    if (data?.settings?.siteTitle) return data.settings.siteTitle;
+    if (data?.settings?.siteTitle) return data.settings;
   }
-  return "MISAKA.LOG";
+  return null;
+}
+
+export function getSiteTitleFromMatches(matches: readonly RouteMatchWithLoaderData[]) {
+  return getSiteSettingsFromMatches(matches)?.siteTitle ?? "MISAKA.LOG";
+}
+
+// 根路由把公开域名（已由 PUBLIC_SITE_URL 还原）放进 loaderData，供 canonical 与 JSON-LD 使用
+export function getSiteOriginFromMatches(matches: readonly RouteMatchWithLoaderData[]) {
+  for (const match of matches) {
+    const origin = (match.loaderData as { siteOrigin?: string } | undefined)?.siteOrigin;
+    if (origin) return origin.replace(/\/+$/, "");
+  }
+  return "";
 }
 
 export function normalizeTimeZone(value: string | undefined): string {

@@ -39,6 +39,7 @@ export interface PostSummary {
   summary: string;
   readingMinutes: number;
   publishedAt: string;
+  updatedAt: string;
   tags: PublicTag[];
 }
 
@@ -91,6 +92,7 @@ interface PostRow {
   markdown: string;
   reading_minutes: number;
   published_at: string;
+  updated_at: string;
   tag_data: string | null;
 }
 
@@ -125,6 +127,7 @@ const POST_SELECT = `
     p.markdown,
     p.reading_minutes,
     p.published_at,
+    p.updated_at,
     (
       SELECT group_concat(t.name || char(31) || t.slug, char(30))
       FROM post_tags pt
@@ -174,6 +177,7 @@ function mapPost(row: PostRow): PostSummary {
     summary: resolvePostSummary(row.summary, row.markdown),
     readingMinutes: row.reading_minutes,
     publishedAt: row.published_at,
+    updatedAt: row.updated_at,
     tags: parseTags(row.tag_data),
   };
 }
@@ -337,26 +341,14 @@ export async function getPostBySlug(db: D1Database, slug: string): Promise<Publi
   return { ...mapPost(row), renderedHtml };
 }
 
-export interface PostIndexEntry {
-  title: string;
-  slug: string;
-  summary: string;
-  publishedAt: string;
-}
-
-// RSS 与 sitemap 使用的轻量文章索引
-export async function getPublishedPostIndex(db: D1Database, limit = 500): Promise<PostIndexEntry[]> {
+// RSS、sitemap、llms.txt 共用的完整文章索引（含标签与更新时间）
+export async function getPublishedPostIndex(db: D1Database, limit = 500): Promise<PostSummary[]> {
   const result = await db
-    .prepare("SELECT title, slug, summary, markdown, published_at FROM posts WHERE status = 'published' AND published_at IS NOT NULL ORDER BY published_at DESC, id DESC LIMIT ?")
+    .prepare(`${POST_SELECT} WHERE p.status = 'published' AND p.published_at IS NOT NULL ORDER BY p.published_at DESC, p.id DESC LIMIT ?`)
     .bind(limit)
-    .all<{ title: string; slug: string; summary: string; markdown: string; published_at: string }>();
+    .all<PostRow>();
 
-  return result.results.map((row) => ({
-    title: row.title,
-    slug: row.slug,
-    summary: resolvePostSummary(row.summary, row.markdown),
-    publishedAt: row.published_at,
-  }));
+  return result.results.map(mapPost);
 }
 
 export interface AdjacentPosts {

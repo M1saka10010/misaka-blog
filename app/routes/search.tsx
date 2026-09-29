@@ -4,12 +4,16 @@ import { Pagination } from "~/components/public/pagination";
 import { PostList } from "~/components/public/post-list";
 import { PublicPageFrame } from "~/components/public/public-page-frame";
 import { SearchIcon } from "~/components/public/icons";
+import { siteMeta } from "~/lib/page-meta";
 import { getSiteTitleFromMatches, readPage } from "~/lib/public-context";
 import { getDatabase } from "~/server/database.server";
 import { searchPublishedPosts } from "~/server/db/public";
 
 export const meta: MetaFunction<typeof loader> = ({ loaderData, matches }) => [
+  ...siteMeta(matches),
   { title: `${loaderData?.query ? `搜索：${loaderData.query}` : "搜索"} · ${getSiteTitleFromMatches(matches)}` },
+  // 搜索结果页是无穷组合的低价值页面，索引它只会稀释站点的引用信号
+  { name: "robots", content: "noindex, follow" },
 ];
 
 export async function loader({ request }: LoaderFunctionArgs) {

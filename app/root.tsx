@@ -13,10 +13,10 @@ import type { Route } from "./+types/root";
 import "./app.css";
 import { getEnvironment } from "~/server/env.server";
 
-export async function loader({}: Route.LoaderArgs) {
+export async function loader({ request }: Route.LoaderArgs) {
   const settings = await getEnvironment().DB.prepare("SELECT favicon_url FROM site_settings WHERE id = 1")
     .first<{ favicon_url: string }>();
-  return { faviconUrl: settings?.favicon_url ?? "" };
+  return { faviconUrl: settings?.favicon_url ?? "", siteOrigin: new URL(request.url).origin };
 }
 
 export const meta: Route.MetaFunction = () => [

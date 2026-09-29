@@ -1,11 +1,31 @@
 import { Link, type LoaderFunctionArgs, type MetaFunction } from "react-router";
 
 import { PublicPageFrame } from "~/components/public/public-page-frame";
-import { getSiteTitleFromMatches } from "~/lib/public-context";
+import { siteMeta } from "~/lib/page-meta";
+import { getSiteOriginFromMatches, getSiteTitleFromMatches } from "~/lib/public-context";
+import { canonicalUrl } from "~/lib/site-urls";
+import { buildCollectionGraph } from "~/lib/structured-data";
 import { getDatabase } from "~/server/database.server";
 import { getAllArchiveMonths } from "~/server/db/public";
 
-export const meta: MetaFunction = ({ matches }) => [{ title: `文章归档 · ${getSiteTitleFromMatches(matches)}` }];
+export const meta: MetaFunction<typeof loader> = ({ loaderData, matches }) => {
+  const origin = getSiteOriginFromMatches(matches);
+  const months = loaderData?.months ?? [];
+  const total = months.reduce((sum, item) => sum + item.postCount, 0);
+  const description = months.length
+    ? `按月份浏览 ${total} 篇已发布文章，覆盖 ${months[months.length - 1].year} 年至 ${months[0].year} 年。`
+    : "按月份浏览全部已发布文章。";
+
+  return [
+    ...siteMeta(matches),
+    { title: `文章归档 · ${getSiteTitleFromMatches(matches)}` },
+    { name: "description", content: description },
+    ...(origin ? [{ tagName: "link", rel: "canonical", href: canonicalUrl(origin, "/archive") }] : []),
+    ...(origin
+      ? [{ "script:ld+json": buildCollectionGraph({ origin, path: "/archive", name: "文章归档", description }) }]
+      : []),
+  ];
+};
 
 export async function loader({}: LoaderFunctionArgs) {
   return { months: await getAllArchiveMonths(getDatabase()) };

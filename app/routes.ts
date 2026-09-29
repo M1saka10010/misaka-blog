@@ -13,6 +13,8 @@ export default [
   ]),
   route("feed.xml", "routes/feed-xml.ts"),
   route("sitemap.xml", "routes/sitemap-xml.ts"),
+  route("robots.txt", "routes/robots-txt.ts"),
+  route("llms.txt", "routes/llms-txt.ts"),
   route("admin/login", "routes/admin-login.tsx"),
   route("auth/github", "routes/auth-github.ts"),
   route("auth/github/callback", "routes/auth-github-callback.ts"),

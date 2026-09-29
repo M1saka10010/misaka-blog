@@ -1,19 +1,9 @@
 import { Link, useOutletContext } from "react-router";
 
+import { formatDottedDate } from "~/lib/date-time";
 import type { PublicLayoutData } from "~/lib/public-context";
 import type { PaginatedPosts } from "~/server/db/public";
 import { ArrowIcon } from "./icons";
-
-export function formatPublishedDate(value: string, timeZone: string): string {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return value;
-  return new Intl.DateTimeFormat("zh-CN", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    timeZone,
-  }).format(date).replaceAll("/", ".");
-}
 
 export function PostList({ data, emptyMessage = "还没有已发布的文章。" }: { data: PaginatedPosts; emptyMessage?: string }) {
   const { timeZone } = useOutletContext<PublicLayoutData>();
@@ -33,7 +23,7 @@ export function PostList({ data, emptyMessage = "还没有已发布的文章。"
           <span aria-hidden="true" className="absolute -left-3 bottom-9 top-7 w-0.5 rounded-full bg-accent opacity-0 transition-opacity duration-200 group-hover:opacity-100 motion-reduce:transition-none md:-left-4" />
           <article>
             <div className="flex flex-wrap items-center gap-x-3 gap-y-2 font-mono text-xs text-muted tabular-nums">
-              <time dateTime={post.publishedAt}>{formatPublishedDate(post.publishedAt, timeZone)}</time>
+              <time dateTime={post.publishedAt}>{formatDottedDate(post.publishedAt, timeZone)}</time>
               <span aria-hidden="true" className="h-1 w-1 rounded-full bg-mint" />
               <span>{post.readingMinutes} 分钟阅读</span>
             </div>

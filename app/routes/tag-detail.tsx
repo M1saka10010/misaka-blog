@@ -4,13 +4,32 @@ import { PageHeading } from "~/components/public/page-heading";
 import { Pagination } from "~/components/public/pagination";
 import { PostList } from "~/components/public/post-list";
 import { PublicPageFrame } from "~/components/public/public-page-frame";
-import { getSiteTitleFromMatches, readPage } from "~/lib/public-context";
+import { siteMeta } from "~/lib/page-meta";
+import { getSiteOriginFromMatches, getSiteTitleFromMatches, readPage } from "~/lib/public-context";
+import { canonicalUrl, tagPath } from "~/lib/site-urls";
+import { buildCollectionGraph } from "~/lib/structured-data";
 import { getDatabase } from "~/server/database.server";
 import { getPostsByTag, getTagBySlug } from "~/server/db/public";
 
-export const meta: MetaFunction<typeof loader> = ({ loaderData, matches }) => [
-  { title: `${loaderData ? `#${loaderData.tag.name}` : "标签不存在"} · ${getSiteTitleFromMatches(matches)}` },
-];
+export const meta: MetaFunction<typeof loader> = ({ loaderData, matches }) => {
+  if (!loaderData) return [...siteMeta(matches), { title: `标签不存在 · ${getSiteTitleFromMatches(matches)}` }];
+
+  const { tag, posts } = loaderData;
+  const origin = getSiteOriginFromMatches(matches);
+  const name = `#${tag.name}`;
+  const description = `共 ${tag.postCount} 篇关于「${tag.name}」的已发布文章。`;
+  const path = tagPath(tag.slug);
+
+  return [
+    ...siteMeta(matches),
+    { title: `${name} · ${getSiteTitleFromMatches(matches)}` },
+    { name: "description", content: description },
+    ...(origin ? [{ tagName: "link", rel: "canonical", href: canonicalUrl(origin, path, posts.page) }] : []),
+    ...(origin
+      ? [{ "script:ld+json": buildCollectionGraph({ origin, path, name, description, posts: posts.posts }) }]
+      : []),
+  ];
+};
 
 export async function loader({ params, request }: LoaderFunctionArgs) {
   const slug = params.slug;

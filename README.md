@@ -62,13 +62,13 @@ node scripts/migrate-sonic.mjs --input ./sonic.db --force
 npm install
 ```
 
-复制 Wrangler 配置模板：
+首次开发时复制 Wrangler 配置模板：
 
 ```bash
 cp wrangler.example.jsonc wrangler.jsonc
 ```
 
-本地开发可以暂时保留模板中的 D1 占位 ID。Wrangler 会使用本地模拟数据库，不会连接生产 D1。
+本地开发可以保留模板中的 D1 占位 ID，Wrangler 使用本地模拟数据库。`wrangler.jsonc` 不提交到 Git；已有本地配置时不要再次复制覆盖。部署自己的实例时，在本地配置中填写自己的 Worker 名称和 D1 信息，不要修改模板中的占位值。
 
 复制本地环境变量模板：
 
@@ -108,17 +108,15 @@ http://localhost:5173/auth/github/callback
 | `.wrangler.env` | Wrangler 部署所需的 Cloudflare API Token 与 Account ID | 否 |
 | `.dev.vars.example` / `.wrangler.env.example` | 配置模板 | 是 |
 
-## 使用 Wrangler 部署
+## 首次配置与本地应急部署
 
-### 1. 创建本地 Wrangler 配置
+日常发布使用下文的 GitHub Actions。首次创建 D1、设置运行时密钥，或 Actions 不可用时，可以使用本地 Wrangler。
 
-从仓库中的模板复制实际部署配置：
+### 1. 检查 Wrangler 配置
 
-```bash
-cp wrangler.example.jsonc wrangler.jsonc
-```
+`wrangler.jsonc` 已被 Git 忽略，只保存本地部署配置；仓库仅提供 `wrangler.example.jsonc` 占位模板，不公开个人 D1 Database ID。Actions 会根据模板和 GitHub Environment 配置生成自己的临时配置，不读取本机文件。
 
-`wrangler.jsonc` 已被 `.gitignore` 忽略，用于保存当前部署环境的 D1 Database ID。不要直接修改 `wrangler.example.jsonc` 中的占位值。
+部署自己的实例时，参考 `wrangler.example.jsonc` 修改本地 Worker 名称和 D1 配置。不要将 API Token、OAuth Secret 或会话密钥写入 Wrangler 配置。
 
 ### 2. 配置 Cloudflare API Token
 
@@ -168,7 +166,7 @@ npx wrangler d1 create misaka-blog --env-file .wrangler.env
 
 - `binding` 必须保持为 `DB`，应用通过 `env.DB` 访问数据库。
 - `database_name` 应与创建的 D1 名称一致。
-- `wrangler.jsonc` 已被 `.gitignore` 忽略，不会提交用户自己的数据库 ID。
+- `wrangler.jsonc` 不提交；Actions 使用 GitHub Environment 中配置的数据库信息。
 - `keep_vars: true` 会保留在 Cloudflare 控制台配置的普通运行时变量。
 - 不要把 OAuth Secret 或 `SESSION_SECRET` 写入 Wrangler 配置。
 
@@ -283,24 +281,59 @@ https://misaka-blog.<你的-workers子域>.workers.dev/admin/login
 /admin/login      后台登录
 ```
 
-## 后续更新
+## GitHub Actions 部署
 
-普通代码更新：
+### 一次性设置
 
-```bash
-npm run typecheck
-npm test
-npm run deploy
-```
+1. 在 GitHub 仓库的 Settings → Environments 中创建 `production`，将部署分支限制为 `main`。若希望合并后全自动部署，不要开启每次发布都需要人工批准的规则。
+2. 在该 Environment 的 Secrets 中添加：
 
-如果版本新增了 D1 migration，应先迁移数据库，再部署代码：
+   | Secret | 内容 |
+   | --- | --- |
+   | `CLOUDFLARE_API_TOKEN` | 具备目标账户所需 Workers Scripts Edit、D1 Edit 和 Account Settings Read 权限的 API Token |
+   | `CLOUDFLARE_ACCOUNT_ID` | Cloudflare Account ID |
+   | `D1_DATABASE_ID` | 自己的 D1 Database ID，仅存 Secret，不提交到仓库 |
 
-```bash
-npm run db:migrate:remote
-npm run deploy
-```
+   CI 不读取本地 `.wrangler.env`，不要上传这个文件。OAuth Secret 和 `SESSION_SECRET` 继续保存在 Cloudflare，不需要复制到 GitHub。
+3. 在同一个 `production` Environment 的 Variables 中添加：
 
-重新部署不会清空 D1 数据。
+   | Variable | 内容 |
+   | --- | --- |
+   | `WORKER_NAME` | 自己的 Cloudflare Worker 名称 |
+   | `D1_DATABASE_NAME` | 自己的 D1 数据库名称 |
+   | `PUBLIC_SITE_URL` | 公开站点 HTTPS Origin，例如 `https://blog.example.com`，不含路径、查询参数或片段 |
+
+   部署和迁移在 Runner 上从模板生成临时 `wrangler.jsonc`，不输出配置内容或上传构建产物。PR 只复制占位模板，不读取这些 Secrets/Variables。Fork 后填写自己的配置即可，无需改动工作流。此处 `PUBLIC_SITE_URL` 用于部署后检查；Cloudflare 中的同名运行时变量仍须单独配置，保持一致。
+4. 首次 PR 检查运行后，在 `main` 的分支保护规则中要求通过 `CI` 工作流的 `Validate` 检查，并要求通过 PR 合并。
+
+### 日常发布
+
+| 工作流 | 触发方式 | 执行内容 |
+| --- | --- | --- |
+| `CI` | 向 `main` 提交 PR | 安装锁定依赖、类型检查、测试、生产构建，不访问生产凭据 |
+| `Deploy` | 推送或合并到 `main` | 检查和构建、记录恢复点、自动迁移 D1、部署 Worker、检查页面；失败时自动恢复 |
+
+工作流固定使用 Node.js 24，通过 `npm ci` 安装 lockfile 中的依赖；发布脚本直接使用项目已安装的 Wrangler，不另行升级。部署显式传入 `--keep-vars`，保留 Cloudflare 控制台配置的普通运行时变量。
+
+普通更新流程为：提交 PR → 检查通过 → 合并 `main` → 查看 `Deploy` 结果。一个生产并发组覆盖迁移、部署和恢复，运行中的发布不会被新提交取消；默认仅保留一个排队任务，较新的提交可能替换尚未运行的发布。不要在 Actions 发布期间通过本地或控制台执行其他部署、迁移或修改 Secrets。
+
+### 自动迁移与失败恢复
+
+`scripts/release.mjs` 按顺序执行：
+
+1. 读取当前 Worker 的单版本、100% 流量部署，并记录明确的版本 ID。
+2. 获取 D1 Time Travel bookmark，将两个恢复点写入 Actions 日志和运行摘要。
+3. 应用 `migrations/` 中尚未执行的迁移；没有新迁移时直接继续。
+4. 部署 Worker，并检查公开首页与后台登录页的 HTTP 200。
+5. 迁移、部署或页面检查失败时自动恢复：若尝试过部署，先回滚到记录的 Worker 版本并核验，再将 D1 恢复到 bookmark；迁移失败且尚未部署时仅恢复 D1。一个恢复操作失败不会阻止尝试另一个，恢复异常会明确报告为需要人工介入。
+
+**自动回溯会撤销 bookmark 之后的所有数据库写入，包括发布期间新增的文章或设置，即使本次没有新 migration。** 发布期间建议暂停后台编辑。页面检查的网络故障也可能触发回溯。恢复后的 bookmark 和可撤销该次恢复的 `previous_bookmark` 会写入运行摘要；恢复成功仍将此次发布标记为失败，避免掩盖原始问题。恢复后检查数据库查询及公开页面，但 HTTP 检查不代替完整 OAuth 登录或数据完整性验证。
+
+首次部署没有旧 Worker 版本可恢复，必须先按上文完成本地初始化部署；自动流程遇到无旧版本、多版本分流、无法读取恢复点等情况，会在迁移前停止。自动恢复不是事务：Worker 和 D1 之间存在短暂不一致窗口，Cloudflare API 不可用、Runner 丢失、人工取消或 job 总超时都可能阻止恢复完成，此时必须使用日志中的恢复点人工处理。
+
+数据库迁移可以与应用代码一起合并，但仍应兼容发布期间运行的旧代码。删除字段等破坏性改动须分阶段发布，不能依靠 Time Travel 消除切换期间的不兼容。需要重新发布时只重跑当前 `main` 对应的 `Deploy`，避免旧代码重新上线。
+
+本地应急发布仍可使用 `npm run typecheck && npm test && npm run deploy`，需要本地 `.wrangler.env`；应急发布也应使用已提交、已检查的代码，避免生产状态偏离 GitHub 发布记录。
 
 ## 常用命令
 

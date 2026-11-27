@@ -283,7 +283,27 @@ https://misaka-blog.<你的-workers子域>.workers.dev/admin/login
 
 ## GitHub Actions 部署
 
-### 一次性设置
+### 首次上线：手动运行 Bootstrap（无需本地 Wrangler）
+
+新实例可以用此流程代替上面的本地初始化；已有博客跳过 Bootstrap，继续使用 Deploy。博客后台仍使用自己的 GitHub OAuth App，没有接入 SSO。
+
+1. 在 GitHub 创建 `production` Environment，将部署分支限制为 `main`。先确定公开 HTTPS 源（首次推荐已启用的 `workers.dev` 子域），创建 GitHub OAuth App，回调填 `<PUBLIC_SITE_URL>/auth/github/callback`。
+2. 在该 Environment 配置以下值。首次运行前**不要设置 `D1_DATABASE_ID`**。
+
+   | 位置 | 名称 | 用途 |
+   | --- | --- | --- |
+   | Secrets | `CLOUDFLARE_API_TOKEN`、`CLOUDFLARE_ACCOUNT_ID` | 目标账户的部署凭据，权限见下表 |
+   | Secrets | `BLOG_OAUTH_CLIENT_SECRET` | GitHub OAuth App 的 Client Secret，仅首次交给 Worker |
+   | Variables | `WORKER_NAME`、`D1_DATABASE_NAME`、`PUBLIC_SITE_URL` | 未使用的资源名和公开 HTTPS 源，无末尾斜杠 |
+   | Variables | `BLOG_OAUTH_CLIENT_ID` | GitHub OAuth App 的 Client ID |
+   | Variables | `BLOG_ADMIN_LOGIN`、`BLOG_ADMIN_ID` | 唯一允许登录后台的 GitHub 用户名和数字 ID，两者都必填 |
+
+3. 工作流进入默认分支后，打开 **Actions → Bootstrap → Run workflow**，选择 `main` 并输入完整 Worker 名称确认。它会新建 D1、用返回的 ID 构建博客、执行迁移，再随 Worker 部署 OAuth 配置及随机生成的 `SESSION_SECRET`，检查 `/` 和 `/admin/login`。不导入文章，不改 DNS。使用自定义域名时须自行完成绑定，页面检查才会通过。
+4. 从 Cloudflare 控制台复制新 D1 的 UUID，存入 `production` 的 `D1_DATABASE_ID` Secret，之后使用 Deploy。用指定的 GitHub 账号完成一次后台登录；确认成功后可移除 GitHub 中仅首次使用的 `BLOG_OAUTH_CLIENT_SECRET`，不会移除 Cloudflare 中的密钥。
+
+Bootstrap 与 Deploy 共用生产发布锁。发现同名 Worker、数据库或无法确认资源不存在时停止；不要在运行期间从控制台或其他仓库并行创建资源。首次无旧版本可回滚：若中途失败，已创建的资源会保留，请在 Cloudflare 核对后仅补全缺失步骤；不要删除数据库或重跑以覆盖现有实例。
+
+### 日常 Deploy 的一次性设置
 
 1. 在 GitHub 仓库的 Settings → Environments 中创建 `production`，将部署分支限制为 `main`。若希望合并后全自动部署，不要开启每次发布都需要人工批准的规则。
 2. 在该 Environment 的 Secrets 中添加：
@@ -329,7 +349,7 @@ https://misaka-blog.<你的-workers子域>.workers.dev/admin/login
 
 **自动回溯会撤销 bookmark 之后的所有数据库写入，包括发布期间新增的文章或设置，即使本次没有新 migration。** 发布期间建议暂停后台编辑。页面检查的网络故障也可能触发回溯。恢复后的 bookmark 和可撤销该次恢复的 `previous_bookmark` 会写入运行摘要；恢复成功仍将此次发布标记为失败，避免掩盖原始问题。恢复后检查数据库查询及公开页面，但 HTTP 检查不代替完整 OAuth 登录或数据完整性验证。
 
-首次部署没有旧 Worker 版本可恢复，必须先按上文完成本地初始化部署；自动流程遇到无旧版本、多版本分流、无法读取恢复点等情况，会在迁移前停止。自动恢复不是事务：Worker 和 D1 之间存在短暂不一致窗口，Cloudflare API 不可用、Runner 丢失、人工取消或 job 总超时都可能阻止恢复完成，此时必须使用日志中的恢复点人工处理。
+首次部署没有旧 Worker 版本可恢复，必须先按上文通过 Bootstrap 或本地 Wrangler 完成初始化部署；自动流程遇到无旧版本、多版本分流、无法读取恢复点等情况，会在迁移前停止。自动恢复不是事务：Worker 和 D1 之间存在短暂不一致窗口，Cloudflare API 不可用、Runner 丢失、人工取消或 job 总超时都可能阻止恢复完成，此时必须使用日志中的恢复点人工处理。
 
 数据库迁移可以与应用代码一起合并，但仍应兼容发布期间运行的旧代码。删除字段等破坏性改动须分阶段发布，不能依靠 Time Travel 消除切换期间的不兼容。需要重新发布时只重跑当前 `main` 对应的 `Deploy`，避免旧代码重新上线。
 
